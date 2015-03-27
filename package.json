@@ -3,9 +3,12 @@
   "main": "./lib/init",
   "linter-package": true,
   "activationEvents": [],
-  "version": "0.5.0",
-  "description": "Lint JavaScript on the fly, using ESLint",
-  "repository": "https://github.com/AtomLinter/linter-eslint.git",
+  "version": "0.0.0",
+  "description": "Lint JavaScript on the fly, using ESLint, with plugin support",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jauco/linter-eslint.git"
+  },
   "license": "MIT",
   "engines": {
     "atom": ">0.50.0"
@@ -13,5 +16,6 @@
   "dependencies": {
     "eslint": "^0.17.1",
     "resolve": "^1.1.5"
-  }
+  },
+  "readmeFilename": "README.md",
 }

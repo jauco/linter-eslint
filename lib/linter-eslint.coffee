@@ -16,16 +16,13 @@ class LinterESLint extends Linter
   linterName: 'eslint'
 
   _requireEsLint: (filePath) ->
-    @localEslint = false
     try
       eslintPath = resolve('eslint', {
         basedir: path.dirname(filePath)
       })
-      eslint = require(eslintPath)
-      @localEslint = true
-      return eslint
+      return require(eslintPath)
     # Fall back to the version packaged in linster-eslint
-    return require('eslint')
+    return require('./eslint')
 
   lintFile: (filePath, callback) ->
 
@@ -57,36 +54,19 @@ class LinterESLint extends Linter
     if options.ignorePath and engine.isPathIgnored(ralativeToIgnorePath)
       return callback([])
 
-    config = engine.getConfigForFile(origPath)
-
-    # This sidesteps a chicken and egg problem:
-    # CLIEngine contains loadPlugins() that is not exposed, so we can't call it
-    # directly. The plugins need to be passed into CLIEngine, but we don't know
-    # which plugins are loaded until after we load CLIEngine.
+    # Currently, linter-eslinter does not support eslint plugins. To not cause
+    # any "Definition for rule ... was not found." errors, we remove any plugin
+    # based rules from the config.
     #
-    # If you are loading plugins this will replace the existing engine with a
-    # new engine where we can pass in the set of plugins for it to load.
-    if config.plugins?.length
-      if @localEslint
-        options.plugins = config.plugins
-        engine = new CLIEngine(options)
-      else
-        isPluginRule = new RegExp("^(#{config.plugins.join('|')})/")
-        Object.keys(config.rules).forEach (key) ->
-          delete config.rules[key] if isPluginRule.test(key)
+    # More information: https://github.com/AtomLinter/linter-eslint/issues/16
+    # if config.plugins?.length
+    #   isPluginRule = new RegExp("^(#{config.plugins.join('|')})/")
+    #   Object.keys(config.rules).forEach (key) ->
+    #     delete config.rules[key] if isPluginRule.test(key)
 
-    result = linter.verify @editor.getText(), config
+    result = engine.executeOnText @editor.getText(), origPath
 
-    if config.plugins?.length and not @localEslint
-      result.push({
-        line: 1
-        column: 0
-        severity: 1
-        message: "`npm install eslint` in your project to enable plugins:
-        #{config.plugins.join(', ')} (linter-eslint)"
-      })
-
-    messages = result.map (m) =>
+    messages = result.results[0].messages.map (m) =>
       message = m.message
       if m.ruleId?
         message += " (#{m.ruleId})"
